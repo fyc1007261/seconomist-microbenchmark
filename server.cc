@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 {
     // Create the file to store the results
     assert(argc == 2);
-    int fd = open(argv[1], O_CREAT | O_TRUNC | O_RDWR);
+    int fd = open(argv[1], O_CREAT | O_TRUNC | O_RDWR, 0755);
     const int buf_size = 500000000;
     char *file_buf = new char[buf_size];
     memset(file_buf, 0, buf_size);
