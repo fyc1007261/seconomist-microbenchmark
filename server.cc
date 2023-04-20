@@ -8,12 +8,39 @@
 #include <arpa/inet.h>
 #include <poll.h>
 #include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/file.h>
+#include <assert.h>
 
 const int PORT = 8080;
 const int MAX_CLIENTS = 1024;
 
-int main()
+int main(int argc, char **argv)
 {
+    // Create the file to store the results
+    assert(argc == 2);
+    int fd = open(argv[1], O_CREAT | O_TRUNC | O_RDWR);
+    const int buf_size = 500000000;
+    char *file_buf = new char[buf_size];
+    memset(file_buf, 0, buf_size);
+    int ret = write(fd, file_buf, buf_size);
+    if (ret < 0)
+    {
+        std::cout << strerror(errno) << std::endl;
+    }
+    assert(ret == buf_size);
+    delete[] file_buf;
+    std::cout << "file created " << ret << std::endl;
+    int offset = 0;
+
+    file_buf = (char *)mmap(NULL, buf_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (file_buf == NULL || (long)file_buf == -1)
+    {
+        std::cerr << strerror(errno) << std::endl;
+        exit(1);
+    }
+    std::cout << "memory mapped\n";
+
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
@@ -91,7 +118,7 @@ int main()
             else
             {
                 // Read and echo data from the client
-                char buffer[1024];
+                char buffer[1024] = {0};
                 int bytes_read = read(poll_fds[i].fd, buffer, sizeof(buffer));
                 timeval tv;
                 gettimeofday(&tv, NULL);
@@ -106,7 +133,9 @@ int main()
                 else
                 {
                     // Echo the data back to the client
-                    std::cout << buffer << " " << tv.tv_sec << "." << tv.tv_usec << std::endl;
+                    // std::cout << buffer << " " << tv.tv_sec << "." << tv.tv_usec << std::endl;
+
+                    offset += sprintf(file_buf + offset, "%s %ld %ld\n", buffer, tv.tv_sec, tv.tv_usec);
                 }
             }
         }

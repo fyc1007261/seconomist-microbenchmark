@@ -9,6 +9,11 @@
 
 int main(int argc, char **argv)
 {
+    if (argc < 3)
+    {
+        std::cerr << "Usage: ./client <serv_addr> <message>" << std::endl;
+        exit(1);
+    }
     // create a TCP socket
     int client_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (client_fd == -1)
@@ -21,7 +26,7 @@ int main(int argc, char **argv)
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(8080);
-    if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0)
+    if (inet_pton(AF_INET, argv[1], &server_addr.sin_addr) <= 0)
     {
         std::cerr << "Invalid address" << std::endl;
         return 1;
@@ -49,7 +54,7 @@ int main(int argc, char **argv)
             if (tv.tv_usec < 50)
                 break;
         }
-        ssize_t num_bytes = send(client_fd, argv[1], strlen(argv[1]), 0);
+        ssize_t num_bytes = send(client_fd, argv[2], strlen(argv[2]), 0);
         if (num_bytes == -1)
         {
             std::cerr << "Failed to send data to server" << std::endl;
